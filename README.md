@@ -25,67 +25,38 @@ By generating high-fidelity synthetic datasets, EdgeSynth enables **data augment
 ## 📂 Repository Structure
 
 EdgeSynth/
-
+│── data/
+│   ├── wind_turbine.csv              # Raw dataset (large) – DO NOT COMMIT
+│   ├── batched_prompts.csv           # Prompts generated for GPT-2
+│   ├── synthetic_scada_cleaned.csv   # Final cleaned synthetic dataset
+│   └── README.md
 │
-
-├── data/ # Raw and processed datasets
-
-│ ├── raw/ # Original wind turbine SCADA dataset
-
-│ ├── processed/ # Cleaned training/evaluation datasets
-
-│ └── synthetic/ # Generated synthetic datasets
-
+│── scripts/
+│   ├── prepare_prompts.py            # Prompt creation from raw CSV (final)
+│   ├── prepare_prompts_v1.py         # Early variant (kept for reference)
+│   ├── real_sample.py                # Real-data preprocessing/sampling
+│   ├── postprocess.py                # Parse/clean GPT-2 outputs → tabular
+│   ├── evaluate.py                   # Synthetic-only QA plots (KDE, scatter, box)
+│   ├── week4.py                      # Main evaluation: KDE, KS, corr, RF regression
+│   └── README.md
 │
-
-├── scripts/ # Core pipeline scripts
-
-│ ├── prepare\_prompts.py # Converts SCADA logs → GPT-2 prompts
-
-│ ├── prepare\_prompts\_v1.py # Initial version of prompt preparation
-
-│ ├── postprocess.py # Cleans GPT-2 raw outputs → structured dataset
-
-│ ├── evaluate.py # Synthetic-only histograms, scatter plots
-
-│ ├── week4.py # Main evaluation: distributions, KS tests, ML utility
-
-│ └── real\_sample.py # Extracts real data samples for evaluation
-
+│── app/
+│   ├── app_streamlit.py              # “EdgeSynth Explorer” prototype
+│   └── README.md
 │
-
-├── app/
-
-│ └── app\_streamlit.py # Streamlit web interface (prototype)
-
+│── results/
+│   ├── figures/                      # Saved plots (KDEs, heatmaps, screenshots, etc.)
+│   └── README.md
 │
-
-├── results/ # Evaluation outputs \& visualizations
-
-│ ├── distributions/ # KDE plots
-
-│ ├── correlations/ # Heatmaps
-
-│ ├── metrics/ # KS stats, regression results (CSV)
-
-│ └── screenshots/ # Streamlit prototype views
-
+│── docs/
+│   ├── report.pdf                    # IEEE paper (optional placeholder)
+│   ├── supporting_material.pdf       # Supplement (optional placeholder)
+│   ├── presentation.pptx             # Slides (optional placeholder)
+│   └── README.md
 │
-
-├── env/
-
-│ └── requirements.txt # Python dependencies
-
+│── env/
+│   ├── requirements.txt              # Python dependencies
 │
-
-├── docs/ # Supporting material
-
-│ ├── supporting\_material.pdf
-
-│ └── slides/ # Presentation slides
-
-│
-
 └── README.md # Project overview (this file)
 
 

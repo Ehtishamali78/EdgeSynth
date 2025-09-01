@@ -93,26 +93,45 @@ pip install -r env/requirements.txt
 
 
 
-▶️ Usage
+## ▶️ Usage
 
-Step 1: Prepare prompts
+Run the pipeline step by step:
+
+**Step 1 – Sample real data**  
+```bash
+python scripts/real_sample.py
+→ Produces data/real_sample_final.csv (matched in size to synthetic dataset).
+
+Step 2 – (Optional) Prepare prompts from raw CSV
+```bash
+python scripts/prepare_promptsV1.py
+→ Produces data/batched_prompts.csv (structured GPT-2 prompts).
+This is an early step; usually you can skip to Step 3 if prompts already exist.
+
+Step 3 – Generate synthetic SCADA logs
+```bash
 python scripts/prepare_prompts.py
+→ Uses GPT-2 to generate synthetic records. Raw text saved to data/gpt2_raw_output_week6.txt.
 
-
-
-Step 2: Generate synthetic SCADA logs (via GPT-2 pipeline)
-\# Run your GPT-2 generation script (Jupyter or Python-based)
-
-
-
-Step 3: Post-process generated data
+Step 4 – Post-process synthetic data
+```bash
 python scripts/postprocess.py
+→ Cleans/parses raw logs into data/synthetic_scada_cleaned_final.csv.
 
-Step 4: Evaluate synthetic vs. real data
+Step 5 – Evaluate real vs. synthetic data
+Quick QA:
+```bash
+python scripts/evaluate.py
+
+Full analysis (KDEs, correlations, ML utility)::
+```bash
 python scripts/week4.py
 
-Step 5: Launch interactive prototype
+Step 6 – Launch interactive prototype
+```bash
 streamlit run app/app_streamlit.py
+→ Opens the EdgeSynth Explorer (KDE overlays, correlation heatmaps, privacy checks).
+
 
 📊 Results Summary
 

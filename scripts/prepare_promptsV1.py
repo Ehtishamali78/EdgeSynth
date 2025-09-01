@@ -1,30 +1,70 @@
+# scripts/prepare_prompts_v1.py
 import pandas as pd
+from pathlib import Path
 
-chunks = pd.read_csv("../data/wind_turbine.csv", chunksize=100000)
-filtered_rows = []
+# ---- Paths ----
+HERE = Path(__file__).resolve().parent
+DATA_DIR = (HERE / ".." / "data").resolve()
+RAW_CSV = DATA_DIR / "wind_turbine.csv"
+PROMPTS_CSV = DATA_DIR / "batched_prompts.csv"
 
-for chunk in chunks:
+CHUNKSIZE = 100_000
+SAMPLE_CAP = 50
+SEED = 42
 
-    # Filter based on meaningful operational data
-    chunk = chunk[(chunk['PowerOutput'] > 0) & (chunk['WindSpeed'] > 2.0)]
+def main():
+    if not RAW_CSV.exists():
+        raise FileNotFoundError(f"Missing raw dataset: {RAW_CSV}")
 
-    # Sample 10–50 rows per chunk
-    filtered_rows.append(chunk.sample(min(50, len(chunk)), random_state=42))
+    filtered_rows = []
 
-# Combine samples from all chunks
-df = pd.concat(filtered_rows, ignore_index=True)
+    # Stream-read for memory safety
+    for chunk in pd.read_csv(RAW_CSV, chunksize=CHUNKSIZE):
+        # Normalize potential alternative column names
+        chunk = chunk.rename(columns={
+            "Power": "PowerOutput",
+            "GeneratorTemp": "GeneratorTemperature",
+            "Timestamp": "Datetime"
+        })
 
-# Format to prompt
-df['Prompt'] = df.apply(
-    lambda row: f"""SCADA Log Entry:
-Timestamp: {row['Datetime']}
-WindSpeed: {row['WindSpeed']} m/s
-RotorSpeed: {row['RotorSpeed']} rpm
-GeneratorSpeed: {row['GeneratorSpeed']} rpm
-Power: {row['PowerOutput']} kW
-GeneratorTemp: {row['GeneratorTemperature']} °C
----""", axis=1
-)
+        required = ["Datetime", "WindSpeed", "RotorSpeed", "GeneratorSpeed",
+                    "PowerOutput", "GeneratorTemperature"]
+        missing = [c for c in required if c not in chunk.columns]
+        if missing:
+            raise KeyError(f"Missing required columns in chunk: {missing}")
 
-# Save prompts for generation
-df[['Prompt']].to_csv("../data/batched_prompts.csv", index=False, header=False)
+        # Filter based on meaningful operational data
+        q = (chunk["PowerOutput"] > 0) & (chunk["WindSpeed"] > 2.0)
+        chunk = chunk.loc[q]
+
+        # Sample up to SAMPLE_CAP rows per chunk (if available)
+        n = min(SAMPLE_CAP, len(chunk))
+        if n > 0:
+            filtered_rows.append(chunk.sample(n, random_state=SEED))
+
+    if not filtered_rows:
+        raise RuntimeError("No rows passed the filter — adjust thresholds or check data.")
+
+    df = pd.concat(filtered_rows, ignore_index=True)
+
+    # Prompt formatting
+    def to_prompt(row):
+        return (
+            "SCADA Log Entry:\n"
+            f"Timestamp: {row['Datetime']}\n"
+            f"WindSpeed: {row['WindSpeed']} m/s\n"
+            f"RotorSpeed: {row['RotorSpeed']} rpm\n"
+            f"GeneratorSpeed: {row['GeneratorSpeed']} rpm\n"
+            f"Power: {row['PowerOutput']} kW\n"
+            f"GeneratorTemp: {row['GeneratorTemperature']} °C\n"
+            "---"
+        )
+
+    df["Prompt"] = df.apply(to_prompt, axis=1)
+
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    df[["Prompt"]].to_csv(PROMPTS_CSV, index=False, header=False)
+    print(f"✅ Wrote prompts → {PROMPTS_CSV} (rows={len(df)})")
+
+if __name__ == "__main__":
+    main()

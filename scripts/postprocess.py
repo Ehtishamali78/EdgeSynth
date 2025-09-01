@@ -1,83 +1,155 @@
+# scripts/postprocess.py
 import re
 import pandas as pd
-import numpy as np
 from datetime import datetime, timedelta
+from pathlib import Path
 
-def parse_entries(text):
+# --- Paths (no helper needed; resolve relative to this file) ---
+HERE = Path(__file__).resolve().parent
+DATA_DIR = (HERE / ".." / "data").resolve()
+
+RAW_TXT = DATA_DIR / "synthetic_raw.txt"                 # <-- put your raw GPT-2 generations here
+PARSED_CSV = DATA_DIR / "synthetic_scada_final.csv"      # intermediate (parsed, before cleaning)
+CLEAN_CSV = DATA_DIR / "synthetic_scada_cleaned.csv"     # final canonical filename
+
+# --- Column names (canonical) ---
+COL_DATETIME = "Datetime"
+COL_WS = "WindSpeed"
+COL_RS = "RotorSpeed"
+COL_GS = "GeneratorSpeed"
+COL_PO = "PowerOutput"
+COL_GT = "GeneratorTemperature"
+
+
+def parse_entries(text: str) -> pd.DataFrame:
+    """
+    Parse raw GPT-2 text containing repeated blocks like:
+
+    SCADA Log Entry:
+    Timestamp: 2022-03-01 12:00:00
+    WindSpeed: 5.2 m/s
+    RotorSpeed: 12.3 rpm
+    GeneratorSpeed: 980.0 rpm
+    Power: 1.7 kW
+    GeneratorTemp: 54.2 °C
+    ---
+    """
     entries = []
     blocks = text.split("SCADA Log Entry:")
     for block in blocks[1:]:
-        # Only take the header lines before the first '---'
+        # Collect header lines up to the first '---'
         header_lines = []
         for line in block.strip().splitlines():
             if line.strip().startswith("---"):
                 break
             if line.strip():
                 header_lines.append(line.strip())
-
         header_text = "\n".join(header_lines)
 
         entry = {}
         try:
-            entry["Timestamp"] = re.search(r"Timestamp:\s*(.*)", header_text).group(1).strip()
-            entry["WindSpeed"] = float(re.search(r"WindSpeed:\s*([\d.]+)", header_text).group(1))
-            entry["RotorSpeed"] = float(re.search(r"RotorSpeed:\s*([\d.]+)", header_text).group(1))
-            entry["GeneratorSpeed"] = float(re.search(r"GeneratorSpeed:\s*([\d.]+)", header_text).group(1))
-            entry["Power"] = float(re.search(r"Power:\s*([\d.]+)", header_text).group(1))
-            entry["GeneratorTemp"] = float(re.search(r"GeneratorTemp:\s*([\d.]+)", header_text).group(1))
+            # Timestamp (string; fixed later)
+            m = re.search(r"Timestamp:\s*(.*)", header_text)
+            entry[COL_DATETIME] = m.group(1).strip() if m else ""
+
+            # Numeric fields (strip units)
+            m = re.search(r"WindSpeed:\s*([\d.]+)", header_text)
+            entry[COL_WS] = float(m.group(1)) if m else None
+
+            m = re.search(r"RotorSpeed:\s*([\d.]+)", header_text)
+            entry[COL_RS] = float(m.group(1)) if m else None
+
+            m = re.search(r"GeneratorSpeed:\s*([\d.]+)", header_text)
+            entry[COL_GS] = float(m.group(1)) if m else None
+
+            m = re.search(r"Power:\s*([\d.]+)", header_text)
+            entry[COL_PO] = float(m.group(1)) if m else None
+
+            m = re.search(r"GeneratorTemp:\s*([\d.]+)", header_text)
+            entry[COL_GT] = float(m.group(1)) if m else None
+
             entries.append(entry)
         except Exception:
+            # Skip malformed block
             continue
+
     return pd.DataFrame(entries)
 
-def fix_timestamps(df):
+
+def fix_timestamps(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Fix timestamps to be evenly spaced, matching the average gap in the data if parseable.
-    Falls back to 1-minute spacing if needed.
+    Make timestamps evenly spaced using the average gap of parseable times.
+    Falls back to 60s spacing from a default start if needed.
     """
     try:
-        parsed_times = pd.to_datetime(df["Timestamp"], errors="coerce")
-        parsed_times = parsed_times.dropna().reset_index(drop=True)
+        parsed = pd.to_datetime(df[COL_DATETIME], errors="coerce")
+        parsed = parsed.dropna().reset_index(drop=True)
 
-        if len(parsed_times) >= 2:
-            avg_gap = (parsed_times.iloc[1] - parsed_times.iloc[0]).total_seconds()
-            if avg_gap <= 0 or avg_gap > 3600:  # sanity check
+        if len(parsed) >= 2:
+            avg_gap = (parsed.iloc[1] - parsed.iloc[0]).total_seconds()
+            if avg_gap <= 0 or avg_gap > 3600:  # sanity bound: 0 < gap <= 1h
                 avg_gap = 60
         else:
             avg_gap = 60
 
-        start_time = parsed_times.iloc[0] if len(parsed_times) > 0 else datetime(2022, 1, 1)
+        start_time = parsed.iloc[0] if len(parsed) > 0 else datetime(2022, 1, 1)
     except Exception:
         avg_gap = 60
         start_time = datetime(2022, 1, 1)
 
     new_times = [start_time + timedelta(seconds=i * avg_gap) for i in range(len(df))]
-    df["Timestamp"] = new_times
+    df[COL_DATETIME] = new_times
     return df
 
-# ---- Load raw GPT-2 output ----
-with open("../data/gpt2_raw_output_week6.txt", "r", encoding="utf-8") as f:
-    text = f.read()
 
-# ---- Parse raw text ----
-df = parse_entries(text)
-df.to_csv("../data/synthetic_scada_final.csv", index=False)
-print(f"✅ Parsed and saved {len(df)} entries to synthetic_scada_final.csv")
+def main():
+    if not RAW_TXT.exists():
+        raise FileNotFoundError(
+            f"Raw GPT-2 output not found: {RAW_TXT}\n"
+            f"Place your raw generations in this file before running postprocess."
+        )
 
-# ---- Drop incomplete rows ----
-df_clean = df.dropna()
+    # ---- Load raw GPT-2 output ----
+    text = RAW_TXT.read_text(encoding="utf-8")
 
-# ---- Clip values to realistic turbine ranges ----
-df_clean["WindSpeed"] = df_clean["WindSpeed"].clip(0, 30)
-df_clean["RotorSpeed"] = df_clean["RotorSpeed"].clip(0, 80)
-df_clean["GeneratorSpeed"] = df_clean["GeneratorSpeed"].clip(0, 900)
-df_clean["Power"] = df_clean["Power"].clip(0, 10)  # kW scale in your sample
-df_clean["GeneratorTemp"] = df_clean["GeneratorTemp"].clip(0, 120)
+    # ---- Parse raw text ----
+    df = parse_entries(text)
+    PARSED_CSV.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(PARSED_CSV, index=False)
+    print(f"✅ Parsed and saved {len(df)} rows → {PARSED_CSV.name}")
 
-# ---- Fix timestamps using real average gap ----
-df_clean = fix_timestamps(df_clean)
+    # ---- Drop incomplete rows ----
+    df_clean = df.dropna().copy()
 
-# ---- Save cleaned file ----
-df_clean.to_csv("../data/synthetic_scada_cleaned_final.csv", index=False)
-print(f"✅ Cleaned synthetic dataset saved with {len(df_clean)} rows and fixed timestamps")
+    # ---- Clip to realistic operational ranges (align with report) ----
+    # WindSpeed (m/s): 0–25
+    if COL_WS in df_clean.columns:
+        df_clean[COL_WS] = df_clean[COL_WS].clip(0, 25)
 
+    # RotorSpeed (rpm): typical large turbine ~0–80 rpm (adjust if your turbine differs)
+    if COL_RS in df_clean.columns:
+        df_clean[COL_RS] = df_clean[COL_RS].clip(0, 80)
+
+    # GeneratorSpeed (rpm): up to 1500 rpm per your text
+    if COL_GS in df_clean.columns:
+        df_clean[COL_GS] = df_clean[COL_GS].clip(0, 900)
+
+    # PowerOutput (kW): your plots show near-rated ~7 kW; keep a safe cap at 10 kW
+    if COL_PO in df_clean.columns:
+        df_clean[COL_PO] = df_clean[COL_PO].clip(0, 10)
+
+    # GeneratorTemperature (°C): 0–120
+    if COL_GT in df_clean.columns:
+        df_clean[COL_GT] = df_clean[COL_GT].clip(0, 120)
+
+    # ---- Fix timestamps (even spacing) ----
+    df_clean = fix_timestamps(df_clean)
+
+    # ---- Save cleaned file (canonical name used across repo) ----
+    CLEAN_CSV.parent.mkdir(parents=True, exist_ok=True)
+    df_clean.to_csv(CLEAN_CSV, index=False)
+    print(f"✅ Cleaned synthetic dataset saved → {CLEAN_CSV.name} (rows={len(df_clean)})")
+
+
+if __name__ == "__main__":
+    main()

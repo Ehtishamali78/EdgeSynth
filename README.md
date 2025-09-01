@@ -25,13 +25,13 @@ By generating high-fidelity synthetic datasets, EdgeSynth enables **data augment
 ## 📂 Repository Structure
 
 EdgeSynth/
-│── data/
+├── data/
 │   ├── wind_turbine.csv              # Raw dataset (large) – DO NOT COMMIT
 │   ├── batched_prompts.csv           # Prompts generated for GPT-2
 │   ├── synthetic_scada_cleaned.csv   # Final cleaned synthetic dataset
 │   └── README.md
 │
-│── scripts/
+├── scripts/
 │   ├── prepare_prompts.py            # Prompt creation from raw CSV (final)
 │   ├── prepare_prompts_v1.py         # Early variant (kept for reference)
 │   ├── real_sample.py                # Real-data preprocessing/sampling
@@ -40,24 +40,24 @@ EdgeSynth/
 │   ├── week4.py                      # Main evaluation: KDE, KS, corr, RF regression
 │   └── README.md
 │
-│── app/
+├── app/
 │   ├── app_streamlit.py              # “EdgeSynth Explorer” prototype
 │   └── README.md
 │
-│── results/
+├── results/
 │   ├── figures/                      # Saved plots (KDEs, heatmaps, screenshots, etc.)
 │   └── README.md
 │
-│── docs/
+├── docs/
 │   ├── report.pdf                    # IEEE paper (optional placeholder)
 │   ├── supporting_material.pdf       # Supplement (optional placeholder)
 │   ├── presentation.pptx             # Slides (optional placeholder)
 │   └── README.md
 │
-│── env/
-│   ├── requirements.txt              # Python dependencies
+├── env/
+│   └── requirements.txt              # Python dependencies
 │
-└── README.md # Project overview (this file)
+└── README.md                         # Project overview (this file)
 
 
 

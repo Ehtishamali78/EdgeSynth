@@ -1,42 +1,4 @@
-# import streamlit as st
-# import pandas as pd
-# import matplotlib.pyplot as plt
-# import seaborn as sns
-# import io
-#
-# # Load cleaned synthetic data
-# @st.cache_data
-# def load_data():
-#     df = pd.read_csv("data/synthetic_scada_cleaned.csv")
-#     return df
-#
-# df = load_data()
-# st.title("EdgeSynth – Synthetic SCADA Data Generator")
-#
-# # Sidebar settings
-# st.sidebar.header("Configuration")
-# n_rows = st.sidebar.slider("Number of synthetic entries to display:", 10, len(df), 50, step=10)
-# sample_df = df.head(n_rows)
-#
-# st.subheader("📋 Preview of Synthetic SCADA Entries")
-# st.dataframe(sample_df)
-#
-# # Download
-# st.subheader("💾 Download Synthetic Data")
-# csv = sample_df.to_csv(index=False).encode("utf-8")
-# st.download_button("Download CSV", csv, "synthetic_preview.csv", "text/csv")
-#
-# # Visualization
-# st.subheader("📈 Feature Distribution Plots")
-# feature = st.selectbox("Select a feature to plot:", df.columns)
-#
-# fig, ax = plt.subplots(figsize=(6, 4))
-# sns.histplot(df[feature], kde=True, bins=30, ax=ax)
-# st.pyplot(fig)
-#
-# st.markdown("---")
-# st.markdown("🧠 Built as part of MSc Project: *EdgeSynth – Leveraging Generative AI for Synthetic Edge Data*")
-
+# scripts/app_streamlit.py
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -49,7 +11,7 @@ import os
 st.set_page_config(page_title="EdgeSynth", page_icon="🌀", layout="wide")
 sns.set_theme(style="whitegrid")
 
-DATA_REAL  = "data/real_sample_final.csv"
+DATA_REAL  = "data/real_sample.csv"
 DATA_SYN   = "data/synthetic_scada_cleaned.csv"
 DATA_SYN_V2= "data/synthetic_scada_cleaned_v2.csv"   # produced by Week 6 refinement
 

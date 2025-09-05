@@ -1,0 +1,73 @@
+# -------------------------
+# Python
+# -------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# -------------------------
+# Virtual environments
+# -------------------------
+env/
+.venv/
+venv/
+ENV/
+env.bak/
+
+# -------------------------
+# IDE / Editor
+# -------------------------
+.vscode/
+.idea/
+*.iml
+
+# -------------------------
+# OS-specific
+# -------------------------
+.DS_Store
+Thumbs.db
+
+# -------------------------
+# Jupyter / Streamlit caches
+# -------------------------
+.ipynb_checkpoints/
+.streamlit/
+**/.ipynb_checkpoints/
+
+# -------------------------
+# Data files (large / generated)
+# -------------------------
+data/wind_turbine.csv            # raw dataset (DO NOT COMMIT)
+data/gpt2_raw_output_*.txt       # raw GPT-2 outputs
+data/synthetic_scada_cleaned.csv # intermediate versions
+data/synthetic_scada_cleaned_final.csv # (keep if sharing pre-generated; ignore if you only want reproducibility)
+data/real_sample_final.csv       # generated real sample
+
+# -------------------------
+# Logs / Results / Figures
+# -------------------------
+results/
+figures/
+*.log
+*.tmp
+
+# -------------------------
+# Docs (optional placeholders)
+# -------------------------
+docs/report.pdf
+docs/presentation.pptx
+docs/supporting_material.pdf
+
+# -------------------------
+# Environment / Requirements
+# -------------------------
+*.env
+*.bak
+.envrc

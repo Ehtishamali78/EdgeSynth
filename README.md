@@ -106,17 +106,20 @@ Step 2 – (Optional) Prepare prompts from raw CSV
 ```bash
 python scripts/prepare_promptsV1.py
 → Produces data/batched_prompts.csv (structured GPT-2 prompts).
-This is an early step; usually you can skip to Step 3 if prompts already exist.
+⚠️ Note: A pre-generated version of this file is already included in data/.
+Run this step only if you want to regenerate prompts yourself.
 
-Step 3 – Generate synthetic SCADA logs
+Step 3 – (Optional) Generate synthetic SCADA logs
 ```bash
 python scripts/prepare_prompts.py
 → Uses GPT-2 to generate synthetic records. Raw text saved to data/gpt2_raw_output_week6.txt.
+⚠️ Note: A cleaned synthetic dataset is already provided (data/synthetic_scada_cleaned_final.csv).
 
-Step 4 – Post-process synthetic data
+Step 4 – (Optional) Post-process synthetic data
 ```bash
 python scripts/postprocess.py
 → Cleans/parses raw logs into data/synthetic_scada_cleaned_final.csv.
+⚠️ Already included in the repo; only run this if you regenerate data.
 
 Step 5 – Evaluate real vs. synthetic data
 Quick QA:

@@ -12,9 +12,10 @@ from sklearn.metrics import mean_absolute_error, r2_score
 # -----------------------------
 # Paths (relative to this file)
 # -----------------------------
-HERE = Path(__file__).resolve().parent
-DATA_DIR = (HERE / ".." / "data").resolve()
-RESULTS_DIR = (HERE / ".." / "results").resolve()
+HERE = Path(__file__).resolve().parent          # ...\EdgeSynth\scripts
+ROOT = HERE.parent                               # ...\EdgeSynth
+DATA_DIR = (ROOT / "data").resolve()
+RESULTS_DIR = (ROOT / "results").resolve()
 FIG_DIR = RESULTS_DIR / "figures"
 METRICS_DIR = RESULTS_DIR / "metrics"
 
